@@ -2,12 +2,16 @@ export function range(start: number, end: number): number[] {
   return [...new Array(end).keys()].map((a) => a + start);
 }
 
-export function chunk<T>(array: T[], chunkSize: number) {
-  return array.reduce((all: T[][], one: T, i: number) => {
-    const ch = Math.floor(i / chunkSize);
-    all[ch] = ([] as T[]).concat(all[ch] || [], one);
-    return all;
-  }, []);
+export function chunk<T>(array: T[], chunkSize: number): T[][] {
+  if (chunkSize <= 0) {
+    throw new Error('Chunk size must be greater than 0');
+  }
+  
+  const result: T[][] = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    result.push(array.slice(i, i + chunkSize));
+  }
+  return result;
 }
 
 export function findToken<T extends { address: string }>(tokens: T[]) {
@@ -20,21 +24,24 @@ export function findToken<T extends { address: string }>(tokens: T[]) {
   };
 }
 
-// TODO: any[] should be ethcall Call[]
-interface Call {
-  contract: {
-    address: string;
-  };
+interface EthcallContract {
+  address: string;
+}
+
+interface EthcallCall {
+  contract: EthcallContract;
   name: string;
   inputs: readonly unknown[];
   outputs: readonly unknown[];
   params: unknown;
 }
 
-// TODO: types for ethcallProvider
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createMulticallChunker(ethcallProvider: any) {
-  return async <T>(array: T[], callback: (item: T, index: number, orginal: T[]) => Call[]) => {
+interface EthcallProvider {
+  all(calls: EthcallCall[]): Promise<unknown[]>;
+}
+
+export function createMulticallChunker(ethcallProvider: EthcallProvider) {
+  return async <T>(array: T[], callback: (item: T, index: number, original: T[]) => EthcallCall[]) => {
     const groups: number[] = [];
 
     const calls = array.flatMap((...args) => {
