@@ -16,6 +16,7 @@ A description of whats wrong. (bad price, incorrect reserve calculations, etc)
 
 **Details**
 
+
 - Chain: (ethereum, polygon, etc)
 - Address: (0x...)
 
